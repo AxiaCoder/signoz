@@ -145,6 +145,8 @@ services:
     !!merge <<: *db-depend
     image: signoz/signoz-otel-collector:${OTELCOL_TAG:-v0.129.2}
     container_name: signoz-otel-collector
+    privileged: true  # ← AJOUTER
+    pid: "host"       # ← AJOUTER 
     command:
       - --config=/etc/otel-collector-config.yaml
       - --manager-config=/etc/manager-config.yaml
@@ -153,9 +155,17 @@ services:
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml
       - ../common/signoz/otel-collector-opamp-config.yaml:/etc/manager-config.yaml
+      - /proc:/host/proc:ro      # ← AJOUTER
+      - /sys:/host/sys:ro        # ← AJOUTER
+      - /:/hostfs:ro             # ← AJOUTER
+      - /etc:/host/etc:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro  
     environment:
       - OTEL_RESOURCE_ATTRIBUTES=host.name=signoz-host,os.type=linux
       - LOW_CARDINAL_EXCEPTION_GROUPING=false
+      - HOST_PROC=/host/proc     # ← AJOUTER
+      - HOST_SYS=/host/sys       # ← AJOUTER
+      - HOST_ROOT=/hostfs        # ← AJOUTER
     ports:
       # - "1777:1777"     # pprof extension
       - "4317:4317" # OTLP gRPC receiver
